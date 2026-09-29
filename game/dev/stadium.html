@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Stadium dev</title>
+    <style>
+      html, body { margin: 0; height: 100%; background: #000; overflow: hidden; font: 12px/1.35 ui-monospace, Menlo, monospace; color: #e8e4d8; }
+      canvas { display: block; width: 100vw; height: 100vh; }
+      #panel { position: fixed; top: 10px; left: 10px; background: rgba(10, 12, 18, 0.78); border: 1px solid #333a48; border-radius: 6px; padding: 10px 12px; width: 250px; user-select: none; }
+      #panel h1 { font-size: 13px; margin: 0 0 8px; color: #ffcf5a; letter-spacing: 0.06em; }
+      #panel label { display: block; margin: 6px 0 2px; }
+      #panel input[type=range] { width: 100%; }
+      #panel button { background: #243048; color: #e8e4d8; border: 1px solid #3c4a66; border-radius: 4px; padding: 4px 7px; margin: 2px 2px 2px 0; cursor: pointer; font: inherit; }
+      #panel button:hover { background: #30405e; }
+      #panel .row { display: flex; flex-wrap: wrap; gap: 2px; }
+      #stats { margin-top: 8px; color: #9fb0c8; white-space: pre; }
+      #hide { position: absolute; top: 6px; right: 8px; background: none; border: none; color: #8894a8; cursor: pointer; }
+    </style>
+  </head>
+  <body>
+    <canvas id="c"></canvas>
+    <div id="panel">
+      <button id="hide" title="hide panel">x</button>
+      <h1>STADIUM DEV</h1>
+      <label>excitement <span id="exv">0.30</span></label>
+      <input id="ex" type="range" min="0" max="1" step="0.01" value="0.3" />
+      <div class="row">
+        <button id="cheer">cheer (random spot)</button>
+        <button id="cheerAll">cheer (all)</button>
+      </div>
+      <label><input id="auto" type="checkbox" /> auto (random cheers)</label>
+      <label><input id="bloom" type="checkbox" checked /> bloom</label>
+      <label><input id="spots" type="checkbox" checked /> spotlights</label>
+      <label>view</label>
+      <div class="row" id="views"></div>
+      <label>quality</label>
+      <div class="row">
+        <button data-q="high">high</button>
+        <button data-q="low">low</button>
+      </div>
+      <div id="stats"></div>
+    </div>
+    <script type="module" src="./stadium.ts"></script>
+  </body>
+</html>

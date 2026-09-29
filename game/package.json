@@ -1,0 +1,28 @@
+{
+  "name": "demolition-derby",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "build:pages": "tsc --noEmit && vite build --base=/demolition-derby/ --outDir dist-pages --emptyOutDir && node scripts/pages.mjs",
+    "publish:pages": "node scripts/publish-pages.mjs",
+    "typecheck": "tsc --noEmit",
+    "preview": "vite preview",
+    "user": "node scripts/users.mjs",
+    "deploy": "vercel deploy --prod"
+  },
+  "dependencies": {
+    "@dimforge/rapier3d-compat": "^0.20.0",
+    "@vercel/functions": "^3.9.9",
+    "jose": "^6.2.12",
+    "three": "^0.186.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.4",
+    "@types/three": "^0.186.0",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.0"
+  }
+}

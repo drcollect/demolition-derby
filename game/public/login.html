@@ -1,0 +1,295 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Demolition Derby · Sign in</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link href="https://fonts.googleapis.com/css2?family=Bungee&family=Barlow+Condensed:wght@500;700&display=swap" rel="stylesheet" />
+    <style>
+      :root {
+        --yellow: #ffd23f;
+        --red: #e0331f;
+        --paper: #f4ecd8;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        min-height: 100%;
+        background: #07080b;
+        color: var(--paper);
+        font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif;
+      }
+      body {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 16px;
+        background:
+          linear-gradient(rgba(5, 6, 10, 0.55), rgba(5, 6, 10, 0.85)),
+          url('/login-bg.jpg') center / cover no-repeat,
+          #07080b;
+      }
+      main {
+        width: min(460px, 100%);
+        text-align: center;
+        padding: 34px 28px 28px;
+        background: rgba(12, 9, 6, 0.82);
+        border: 3px solid var(--yellow);
+        box-shadow: 0 10px 0 #000, 0 0 60px rgba(0, 0, 0, 0.7);
+      }
+      h1 {
+        margin: 0;
+        font-family: 'Bungee', Impact, 'Arial Black', sans-serif;
+        font-size: clamp(34px, 9vw, 52px);
+        line-height: 0.95;
+        color: var(--yellow);
+        -webkit-text-stroke: 2px #000;
+        text-shadow: 0 6px 0 #000;
+        transform: rotate(-3deg);
+      }
+      h1 span {
+        display: block;
+        color: var(--red);
+        font-size: 0.72em;
+      }
+      p {
+        font-size: 19px;
+        line-height: 1.35;
+        margin: 26px 0 22px;
+      }
+      #button {
+        display: flex;
+        justify-content: center;
+        min-height: 44px;
+      }
+      form {
+        display: grid;
+        gap: 6px;
+        text-align: left;
+        margin: 0 auto;
+        width: min(280px, 100%);
+      }
+      form[hidden],
+      .or[hidden] {
+        display: none;
+      }
+      label {
+        font-size: 14px;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        opacity: 0.75;
+        margin-top: 6px;
+      }
+      input {
+        font: 500 19px/1.2 'Barlow Condensed', 'Arial Narrow', sans-serif;
+        color: var(--paper);
+        background: rgba(0, 0, 0, 0.55);
+        border: 2px solid rgba(244, 236, 216, 0.25);
+        border-radius: 4px;
+        padding: 9px 11px;
+        outline: none;
+      }
+      input:focus {
+        border-color: var(--yellow);
+      }
+      form button {
+        margin-top: 14px;
+        font: 400 19px/1 'Bungee', Impact, 'Arial Black', sans-serif;
+        color: #111;
+        background: var(--yellow);
+        border: 0;
+        border-radius: 4px;
+        padding: 12px 14px 11px;
+        cursor: pointer;
+        box-shadow: 0 4px 0 #000;
+      }
+      form button:focus-visible {
+        outline: 3px solid var(--paper);
+        outline-offset: 2px;
+      }
+      form button:disabled {
+        opacity: 0.6;
+        cursor: progress;
+      }
+      .or {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        width: min(280px, 100%);
+        margin: 20px auto 16px;
+        font-size: 14px;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        opacity: 0.6;
+      }
+      .or::before,
+      .or::after {
+        content: '';
+        flex: 1;
+        border-top: 1px solid rgba(244, 236, 216, 0.3);
+      }
+      #msg {
+        min-height: 24px;
+        margin-top: 18px;
+        font-size: 17px;
+        color: var(--yellow);
+      }
+      #msg.err {
+        color: #ff7a66;
+      }
+      small {
+        display: block;
+        margin-top: 18px;
+        opacity: 0.55;
+        font-size: 14px;
+        letter-spacing: 1px;
+      }
+      small.legal {
+        margin-top: 10px;
+      }
+      small.legal a {
+        color: inherit;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>DEMOLITION<span>DERBY</span></h1>
+      <p id="lead">Sign in to get on the track.</p>
+      <form id="pw" hidden>
+        <label for="username">Username</label>
+        <input id="username" name="username" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" maxlength="64" required />
+        <label for="password">Password</label>
+        <input id="password" name="password" type="password" autocomplete="current-password" maxlength="256" required />
+        <button type="submit" id="pwgo">Sign in</button>
+      </form>
+      <div class="or" id="or" hidden>or</div>
+      <div id="button"></div>
+      <div id="msg" role="status"></div>
+      <small id="who"></small>
+      <small class="legal"><a href="/privacy">Privacy</a> · <a href="/terms">Terms</a></small>
+    </main>
+    <script>
+      const msg = document.getElementById('msg');
+      const say = (text, err) => {
+        msg.textContent = text;
+        msg.className = err ? 'err' : '';
+      };
+
+      async function onCredential(resp) {
+        say('Checking…');
+        try {
+          const r = await fetch('/api/auth/google', {
+            method: 'POST',
+            headers: { 'content-type': 'application/json', 'x-requested-with': 'derby' },
+            body: JSON.stringify({ credential: resp.credential }),
+          });
+          const data = await r.json().catch(() => ({}));
+          if (r.ok) {
+            say('Welcome, ' + data.email + '. Starting engines…');
+            location.replace('/');
+            return;
+          }
+          if (data.error === 'not_allowed') say(data.email + " isn't on the list. Use a 2iqresearch.com or collect.app account.", true);
+          else if (data.error === 'unverified') say('That Google account has no verified email address.', true);
+          else if (data.error === 'not_configured') say("Sign-in isn't set up on the server yet.", true);
+          else say('Sign-in failed. Please try again.', true);
+          if (window.google) google.accounts.id.disableAutoSelect();
+        } catch {
+          say('Network error. Please try again.', true);
+        }
+      }
+
+      // username / password accounts (created by the game's owner)
+      const form = document.getElementById('pw');
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const go = document.getElementById('pwgo');
+        const username = document.getElementById('username').value.trim();
+        const password = document.getElementById('password').value;
+        if (!username || !password) return;
+        go.disabled = true;
+        say('Checking…');
+        try {
+          const r = await fetch('/api/auth/password', {
+            method: 'POST',
+            headers: { 'content-type': 'application/json', 'x-requested-with': 'derby' },
+            body: JSON.stringify({ username, password }),
+          });
+          const data = await r.json().catch(() => ({}));
+          if (r.ok) {
+            say('Welcome, ' + data.user + '. Starting engines…');
+            location.replace('/');
+            return;
+          }
+          if (r.status === 429) say('Too many wrong tries. Wait a few minutes and try again.', true);
+          else if (data.error === 'invalid') say('Wrong username or password.', true);
+          else if (data.error === 'not_configured') say("Sign-in isn't set up on the server yet.", true);
+          else say('Sign-in failed. Please try again.', true);
+          document.getElementById('password').select();
+        } catch {
+          say('Network error. Please try again.', true);
+        } finally {
+          go.disabled = false;
+        }
+      });
+
+      async function start() {
+        let cfg = {};
+        try {
+          cfg = await (await fetch('/api/auth/config', { cache: 'no-store' })).json();
+        } catch {}
+        if (cfg.passwordLogin) {
+          form.hidden = false;
+          document.getElementById('or').hidden = !cfg.clientId;
+        }
+        if (cfg.domains && cfg.domains.length && cfg.clientId) {
+          document.getElementById('who').textContent = 'Google: ' + cfg.domains.map((d) => '@' + d).join(' and ') + ' accounts';
+        }
+        if (new URLSearchParams(location.search).has('signedout')) say('Signed out.');
+        if (!cfg.clientId) {
+          if (!cfg.passwordLogin) say("Sign-in isn't set up yet (no Google client ID on the server).", true);
+          return;
+        }
+        const ready = () => {
+          google.accounts.id.initialize({
+            client_id: cfg.clientId,
+            callback: onCredential,
+            ux_mode: 'popup',
+            auto_select: false,
+            itp_support: true,
+            use_fedcm_for_prompt: true,
+          });
+          google.accounts.id.renderButton(document.getElementById('button'), {
+            theme: 'filled_black',
+            size: 'large',
+            shape: 'pill',
+            text: 'signin_with',
+            width: 280,
+          });
+          if (new URLSearchParams(location.search).has('signedout')) {
+            google.accounts.id.disableAutoSelect();
+          } else if (!cfg.passwordLogin) {
+            // One Tap only when Google is the sole way in; otherwise it would cover the form
+            google.accounts.id.prompt();
+          }
+        };
+        if (window.google && google.accounts) ready();
+        else {
+          const s = document.createElement('script');
+          s.src = 'https://accounts.google.com/gsi/client';
+          s.async = true;
+          s.onload = ready;
+          s.onerror = () => say("Couldn't load Google sign-in. Check your connection or ad blocker.", true);
+          document.head.appendChild(s);
+        }
+      }
+      start();
+    </script>
+  </body>
+</html>

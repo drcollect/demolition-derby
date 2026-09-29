@@ -1,0 +1,22 @@
+.DS_Store
+
+# local tool config and working files
+.claude/
+refs/
+renders/
+blend/
+
+# game build output and local state
+game/node_modules/
+game/dist/
+game/dist-pages/
+game/.shots/
+game/.vercel/
+game/.env*
+
+# password hashes for the private Vercel deployment (npm run user -- add <name> creates this file)
+game/api/_lib/users.ts
+
+# sign-in pages for the private Vercel deployment (they carry contact details)
+game/public/privacy.html
+game/public/terms.html

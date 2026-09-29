@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Derby Audio Bench</title>
+    <style>
+      :root {
+        --bg: #111317;
+        --panel: #1b1e24;
+        --line: #2c313a;
+        --text: #d9dde4;
+        --muted: #8a93a3;
+        --accent: #f0a431;
+        --good: #5fcf80;
+        --bad: #ff6b5e;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font: 13px/1.4 ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+      }
+      header {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px 16px;
+        align-items: center;
+        padding: 10px 16px;
+        border-bottom: 1px solid var(--line);
+        position: sticky;
+        top: 0;
+        background: var(--bg);
+        z-index: 2;
+      }
+      header h1 { font-size: 15px; margin: 0 8px 0 0; letter-spacing: 0.02em; }
+      #status { font: 12px ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--muted); }
+      main {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(330px, 1fr));
+        gap: 12px;
+        padding: 12px 16px 40px;
+      }
+      section {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 10px 12px 12px;
+      }
+      section h2 { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent); margin: 0 0 8px; }
+      .row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 6px 0; }
+      label.s { display: grid; grid-template-columns: 80px 1fr 56px; gap: 8px; align-items: center; margin: 4px 0; }
+      label.s output { font: 12px ui-monospace, Menlo, monospace; text-align: right; color: var(--muted); }
+      input[type='range'] { width: 100%; }
+      button {
+        background: #2a2f38;
+        color: var(--text);
+        border: 1px solid #3a404b;
+        border-radius: 5px;
+        padding: 5px 9px;
+        font: inherit;
+        cursor: pointer;
+        user-select: none;
+        -webkit-user-select: none;
+        touch-action: none;
+      }
+      button:hover { border-color: var(--accent); }
+      button.on, button:active { background: var(--accent); color: #111; border-color: var(--accent); }
+      button.primary { background: var(--accent); color: #111; border-color: var(--accent); font-weight: 600; }
+      select { background: #2a2f38; color: var(--text); border: 1px solid #3a404b; border-radius: 5px; padding: 4px; font: inherit; }
+      canvas { width: 100%; height: 220px; background: #0c0e11; border-radius: 6px; display: block; }
+      #log, #levels {
+        font: 11.5px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace;
+        white-space: pre-wrap;
+        max-height: 320px;
+        overflow: auto;
+        background: #0c0e11;
+        border-radius: 6px;
+        padding: 8px;
+        margin: 6px 0 0;
+      }
+      #levels table { border-collapse: collapse; width: 100%; }
+      #levels td, #levels th { padding: 1px 6px; text-align: right; border-bottom: 1px solid #1c2027; }
+      #levels td:first-child, #levels th:first-child { text-align: left; }
+      .bad { color: var(--bad); }
+      .good { color: var(--good); }
+      .wide { grid-column: 1 / -1; }
+      .hint { color: var(--muted); font-size: 12px; margin: 4px 0 0; }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Derby audio bench</h1>
+      <button id="init" class="primary">Init audio</button>
+      <label>Volume <input id="vol" type="range" min="0" max="1" step="0.01" value="0.8" style="width: 110px" /></label>
+      <label><input id="mute" type="checkbox" /> mute</label>
+      <span id="status">not initialised</span>
+    </header>
+    <main>
+      <section>
+        <h2>Source position (listener at origin, facing -Z)</h2>
+        <label class="s">distance <input id="dist" type="range" min="1" max="80" step="0.5" value="8" /><output></output></label>
+        <label class="s">azimuth <input id="az" type="range" min="-180" max="180" step="1" value="25" /><output></output></label>
+        <canvas id="map" width="640" height="440"></canvas>
+      </section>
+
+      <section>
+        <h2>One-shots</h2>
+        <label class="s">strength <input id="strength" type="range" min="0.02" max="1" step="0.01" value="0.7" /><output></output></label>
+        <div class="row">
+          <button data-impact="car">impact car</button>
+          <button data-impact="wall">impact wall</button>
+          <button data-impact="ground">impact ground</button>
+          <button data-impact="debris">impact debris</button>
+        </div>
+        <div class="row">
+          <button id="glass">glass (strength)</button>
+          <button id="partoff">part off</button>
+          <button id="wreck">wreck</button>
+        </div>
+        <div class="row">
+          <button id="pileup">pile-up (15 hits / 2 s)</button>
+          <button id="spam">contact spam (30 calls / 0.3 s)</button>
+          <button id="randomhits">random hits: off</button>
+        </div>
+        <p class="hint">Glass: strength &lt; 0.5 cracks, &ge; 0.5 shatters. "Contact spam" fires 30 near-identical impact calls to show merging.</p>
+      </section>
+
+      <section>
+        <h2>Engine</h2>
+        <div class="row">
+          <select id="profile">
+            <option value="v8big">v8big (sedan)</option>
+            <option value="v8wagon">v8wagon (wagon)</option>
+            <option value="v8muscle" selected>v8muscle (coupe)</option>
+            <option value="i4">i4 (hatchback)</option>
+            <option value="v8truck">v8truck (pickup)</option>
+          </select>
+          <label><input id="isplayer" type="checkbox" checked /> player</label>
+          <button id="engcreate">create</button>
+          <button id="engremove">remove</button>
+        </div>
+        <label class="s">rpm <input id="rpm" type="range" min="0" max="7000" step="10" value="850" /><output></output></label>
+        <label class="s">throttle <input id="thr" type="range" min="0" max="1" step="0.01" value="0" /><output></output></label>
+        <label class="s">load <input id="load" type="range" min="0" max="1" step="0.01" value="0.1" /><output></output></label>
+        <label class="s">damage <input id="dmg" type="range" min="0" max="1" step="0.01" value="0" /><output></output></label>
+        <div class="row">
+          <label><input id="dead" type="checkbox" /> dead</label>
+          <button id="rev">rev</button>
+          <button id="drive">drive (2 gears + lift)</button>
+          <button id="driveby">drive-by 30 m/s</button>
+          <button id="tour">profile tour</button>
+        </div>
+        <p class="hint">Automations move the sliders. Drive-by only makes sense with "player" unticked (AI voices are positional, with Doppler).</p>
+      </section>
+
+      <section>
+        <h2>Continuous (hold)</h2>
+        <label class="s">intensity <input id="intensity" type="range" min="0" max="1" step="0.01" value="0.8" /><output></output></label>
+        <label class="s">surface <input id="surface" type="range" min="0" max="1" step="0.01" value="0.5" /><output></output></label>
+        <div class="row">
+          <button data-hold="scrape">hold: scrape</button>
+          <button data-hold="skid">hold: skid</button>
+          <button data-hold="horn">hold: horn</button>
+        </div>
+        <p class="hint">Surface: 0 = dirt scrub, 1 = concrete squeal. Release to hear the self-fade.</p>
+      </section>
+
+      <section>
+        <h2>Crowd</h2>
+        <label class="s">excitement <input id="excite" type="range" min="0" max="1" step="0.01" value="0.25" /><output></output></label>
+        <label class="s">cheer <input id="cheerS" type="range" min="0.05" max="1" step="0.01" value="0.7" /><output></output></label>
+        <div class="row"><button id="cheer">cheer</button></div>
+      </section>
+
+      <section>
+        <h2>UI</h2>
+        <div class="row" id="uibtns"></div>
+      </section>
+
+      <section>
+        <h2>Stress test</h2>
+        <div class="row">
+          <button id="stress">12 engines orbiting: off</button>
+          <label><input id="stressfx" type="checkbox" checked /> with random impacts, scrapes, skids</label>
+        </div>
+        <p class="hint">Player (v8muscle) at the listener plus 11 AI cars on orbits of 6-38 m. Watch full/lite/off counts in the header.</p>
+      </section>
+
+      <section class="wide">
+        <h2>Offline level check (OfflineAudioContext)</h2>
+        <div class="row">
+          <button id="levels-run">run level check</button>
+          <span class="hint">Renders every sound family through the real graph; peak/RMS in dBFS. "raw" = without the master limiter.</span>
+        </div>
+        <div id="levels">not run</div>
+      </section>
+
+      <section class="wide">
+        <h2>Offline render viewer</h2>
+        <div class="row">
+          <select id="view-sel"></select>
+          <button id="view-run">render &amp; view</button>
+          <span class="hint">Waveform (top) and log-frequency spectrogram (25 Hz to 16 kHz, grid at 100 Hz / 1 kHz / 10 kHz) of the left channel.</span>
+        </div>
+        <canvas id="view" width="1200" height="420" style="height: auto; aspect-ratio: 1200 / 420"></canvas>
+      </section>
+
+      <section class="wide">
+        <h2>Log</h2>
+        <div id="log"></div>
+      </section>
+    </main>
+    <script type="module" src="./audio.ts"></script>
+  </body>
+</html>
